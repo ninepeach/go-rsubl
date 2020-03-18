@@ -198,9 +198,6 @@ func main() {
 				cmd := exec.Command(os.Args[0], args...)
 				cmd.Start()
 
-				fmt.Println(cmd.Args)
-				fmt.Println("[PID]", cmd.Process.Pid)
-
 				os.Exit(0)
 			}
 
