@@ -44,23 +44,39 @@ var hashes = make(map[string]string)
 func sendFile(c *rsub.Conn, path string) error {
 	var fileSize int64 = 0
 	var fileExist bool = false
+	var f *os.File
 
 	fInfo, err := os.Stat(path)
 	if err == nil {
 		fileExist = true
 		fileSize = fInfo.Size()
+		if fInfo.IsDir() {
+			return errors.New("only file can be edit")
+		}
+
+
 	}
+
+	if !fileExist {
+		f, err = os.Create(path)
+    } else {
+		//open file
+		f, err = os.Open(path)
+	}
+    if err != nil {
+    	return err
+    }
+    defer f.Close()
 
 	displayName := filepath.Base(path)
 	hostname, err := os.Hostname()
 
-	if err==nil {
-		displayName = fmt.Sprintf("%s:%s", hostname, displayName)
-	}
+    if err==nil {
+    	displayName = fmt.Sprintf("%s:%s", hostname, displayName)
+    }
 
 	realpath, _ := filepath.Abs(path)
 	hash := fmt.Sprintf("%x", md5.Sum([]byte(realpath)))
-	hashes[hash] = path
 
 	c.SendString("open\n")
 	c.SendString(fmt.Sprintf("display-name: %v\n", displayName))
@@ -70,20 +86,11 @@ func sendFile(c *rsub.Conn, path string) error {
 	c.SendString("selection: 0\n")
 	c.SendString(fmt.Sprintf("token: %v\n", hash))
 	c.SendString(fmt.Sprintf("data: %v\n", fileSize))
-	if fileExist {
-		//open file
-		f, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		c.SendFile(bufio.NewReader(f))
-	}
-
+    c.SendFile(bufio.NewReader(f))
 	c.SendString("\n.\n")
-
 	c.Flush()
+
+	hashes[hash] = path
 
 	return nil
 }
