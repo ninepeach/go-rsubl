@@ -86,7 +86,7 @@ func sendFile(c *rsub.Conn, path string) error {
 	c.SendString("selection: 0\n")
 	c.SendString(fmt.Sprintf("token: %v\n", hash))
 	c.SendString(fmt.Sprintf("data: %v\n", fileSize))
-    c.SendFile(bufio.NewReader(f))
+        c.SendFile(bufio.NewReader(f))
 	c.SendString("\n.\n")
 	c.Flush()
 
@@ -157,10 +157,27 @@ func processRecv(c *rsub.Conn, line []byte) (error) {
 		f.Close()
 
 		if file, ok := hashes[token]; ok {
+			fi, err := os.Stat(file)
+			if err !=nil {
+				log.Printf("get file(%s) stat error %s ", file, err)
+				return err
+			}
+			fm := fi.Mode()
+			filePerm := fm.Perm()
+
+			err = os.Rename(f.Name(), file)
+			if err !=nil {
+				log.Printf("save file(%s) failed %s ", file, err)
+				return err
+			}
+
 			if Verbose {
 				log.Printf("save file(%s) %d bytes success", file, size)
 			}
-			return os.Rename(f.Name(), file)
+
+			os.Chmod(file, filePerm)
+			
+			return nil
 		}
 		return errors.New("save file error token: " + token)
 	}
