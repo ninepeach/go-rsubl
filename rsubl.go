@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	AppVersion = "0.1.2"
+	AppVersion = "0.1.3"
 	Verbose = false
 	HelpTemplate = `NAME:
    {{.Name}} - {{.Usage}}
